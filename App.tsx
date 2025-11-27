@@ -3,7 +3,6 @@ import React, { useState, useCallback, useRef } from 'react';
 import ModelViewer, { ModelViewerRef } from './components/ModelViewer';
 import Controls from './components/Controls';
 import { AppState, ColorMode, GenerationResult, TextureStyle } from './types';
-import { generateTextureImage } from './services/geminiService';
 import { Settings } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -120,13 +119,13 @@ const App: React.FC = () => {
           prompt: appState.prompt,
         });
       } else {
-        const imageUrl = await generateTextureImage(appState.prompt, TextureStyle.PIXEL_ART);
-        setGeneration({
-          imageUrl,
+        // Fallback or placeholder for non-text mode if needed, or just do nothing/show error
+        console.warn("Texture generation is disabled.");
+        setGeneration((prev) => ({
+          ...prev,
           loading: false,
-          error: null,
-          prompt: appState.prompt,
-        });
+          error: "Texture generation is currently disabled.",
+        }));
       }
     } catch (err: any) {
       setGeneration((prev) => ({
