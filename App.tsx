@@ -140,9 +140,13 @@ const App: React.FC = () => {
     viewerRef.current?.exportPLY();
   }, []);
 
-  const handleStartRecording = useCallback(() => {
-    viewerRef.current?.startRecording();
-    setIsRecording(true);
+  const handleStartRecording = useCallback(async () => {
+    if (viewerRef.current) {
+      const started = await viewerRef.current.startRecording();
+      if (started) {
+        setIsRecording(true);
+      }
+    }
   }, []);
 
   const handleStopRecording = useCallback(() => {

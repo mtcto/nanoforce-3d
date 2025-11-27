@@ -14,7 +14,7 @@ interface ModelViewerProps {
 
 export interface ModelViewerRef {
   exportPLY: () => void;
-  startRecording: () => void;
+  startRecording: () => Promise<boolean>;
   stopRecording: () => void;
 }
 
@@ -93,6 +93,7 @@ const PixelCloud = forwardRef<{ exportPLY: () => void }, {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   const [particlesData, setParticlesData] = useState<{ pos: number[], col: number[] } | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   // Expose export function
   useImperativeHandle(ref, () => ({
@@ -139,7 +140,7 @@ end_header
             width: { ideal: 3840 },
             height: { ideal: 2160 },
             frameRate: { ideal: 60 },
-            displaySurface: 'monitor', // Encourages capturing the whole screen/monitor
+            // displaySurface: 'monitor', // Removed as it causes issues on some browsers/OS
           },
           audio: false,
           preferCurrentTab: false
@@ -168,6 +169,8 @@ end_header
           videoBitsPerSecond: 50000000 // 50 Mbps for high quality
         });
 
+        mediaRecorderRef.current = mediaRecorder;
+
         const chunks: Blob[] = [];
 
         mediaRecorder.ondataavailable = (e) => {
@@ -187,18 +190,19 @@ end_header
 
           // Stop all tracks to release the stream
           stream.getTracks().forEach(track => track.stop());
+          mediaRecorderRef.current = null;
         };
 
         mediaRecorder.start();
-        (window as any).mediaRecorder = mediaRecorder;
+        return true;
       } catch (err) {
         console.error("Error starting screen recording:", err);
+        return false;
       }
     },
     stopRecording: () => {
-      const mediaRecorder = (window as any).mediaRecorder as MediaRecorder;
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
       }
     }
   }));
@@ -207,11 +211,14 @@ end_header
   useEffect(() => {
     if (!imageUrl) return;
 
+    let isMounted = true;
     const img = new Image();
     img.crossOrigin = "Anonymous";
     img.src = imageUrl;
 
     img.onload = () => {
+      if (!isMounted) return;
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (!ctx) return;
@@ -270,7 +277,15 @@ end_header
         }
       }
 
-      setParticlesData({ pos: validPoints, col: validColors });
+      if (isMounted) {
+        setParticlesData({ pos: validPoints, col: validColors });
+      }
+    };
+
+    return () => {
+      isMounted = false;
+      img.onload = null;
+      img.src = ""; // Help GC
     };
   }, [
     imageUrl,
