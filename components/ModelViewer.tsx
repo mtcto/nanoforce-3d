@@ -136,18 +136,36 @@ end_header
       try {
         const stream = await navigator.mediaDevices.getDisplayMedia({
           video: {
-            width: { min: 1280, ideal: 1920, max: 3840 },
-            height: { min: 720, ideal: 1080, max: 2160 },
-            frameRate: { ideal: 60, max: 60 },
-            aspectRatio: { ideal: 1.7777777778 }, // 16:9
+            width: { ideal: 3840 },
+            height: { ideal: 2160 },
+            frameRate: { ideal: 60 },
+            displaySurface: 'monitor', // Encourages capturing the whole screen/monitor
           },
           audio: false,
           preferCurrentTab: false
         } as any);
 
+        // Determine the best supported mime type
+        const mimeTypes = [
+          'video/webm; codecs=av1',
+          'video/webm; codecs=vp9',
+          'video/webm; codecs=vp8',
+          'video/webm'
+        ];
+
+        let selectedMimeType = 'video/webm';
+        for (const type of mimeTypes) {
+          if (MediaRecorder.isTypeSupported(type)) {
+            selectedMimeType = type;
+            break;
+          }
+        }
+
+        console.log(`Using mimeType: ${selectedMimeType}`);
+
         const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: 'video/webm; codecs=vp9',
-          videoBitsPerSecond: 25000000 // 25 Mbps for high quality
+          mimeType: selectedMimeType,
+          videoBitsPerSecond: 50000000 // 50 Mbps for high quality
         });
 
         const chunks: Blob[] = [];
@@ -159,7 +177,7 @@ end_header
         };
 
         mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'video/webm' });
+          const blob = new Blob(chunks, { type: selectedMimeType });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
