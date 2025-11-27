@@ -1,0 +1,5 @@
+{
+  "name": "NanoForge 3D",
+  "description": "Generate AI-powered textures for 3D primitives using Gemini 2.5 Flash Image. Features pixel-art modes and real-time 3D preview.",
+  "requestFramePermissions": []
+}
