@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { TextureStyle } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 const MODEL_NAME = 'gemini-2.5-flash-image';
 
@@ -9,8 +9,8 @@ export const generateTextureImage = async (
   prompt: string,
   style: TextureStyle
 ): Promise<string> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API Key is missing.");
+  if (!import.meta.env.VITE_GEMINI_API_KEY) {
+    throw new Error("API Key is missing. Please set VITE_GEMINI_API_KEY in your environment.");
   }
 
   // Construct a prompt optimized for texture generation
